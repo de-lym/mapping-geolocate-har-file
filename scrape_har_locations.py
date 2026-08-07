@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import List, Tuple
 
 # === CONFIGURATION ===
-HAR_FILE = "inputs/yourfilename.har"  # Replace with your HAR filename
+HAR_FILE = "inputs/www.naver.com2.har"  # Replace with your HAR filename
 OUTPUT_MAP = "outputs/ip_map.html"
 MAX_IPS = 50  # Limit to avoid API rate limiting
 
@@ -32,18 +32,26 @@ def load_ips_from_har(path: str) -> List[str]:
 
 
 def geolocate_ip(ip_item: Tuple[str, str]) -> Tuple[str, float, float, str]:
-    """Geolocate IP using ipinfo.io API. Returns (ip, lat, lon, url)."""
+    """Geolocate IP using ip-api.com. Returns (ip, lat, lon, url)."""
     ip, url = ip_item
 
     try:
-        resp = requests.get(f"https://ipinfo.io/{ip}/json")
+        resp = requests.get(
+            f"http://ip-api.com/json/{ip}",
+            timeout=10,
+        )
         data = resp.json()
-        loc = data.get("loc")
-        if loc:
-            lat, lon = map(float, loc.split(","))
+
+        if data.get("status") == "success":
+            lat = float(data["lat"])
+            lon = float(data["lon"])
             return ip, lat, lon, url
+
+        print(f"Could not locate {ip}: {data.get('message')}")
+
     except Exception as e:
         print(f"Error locating {ip}: {e}")
+
     return ip, 0, 0, url
 
 
